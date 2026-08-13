@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LOCK IN — Focus Workspace</title>
+<meta name="description" content="A futuristic, minimal focus timer and task workspace." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2240%22 fill=%22none%22 stroke=%22white%22 stroke-width=%228%22/><circle cx=%2250%22 cy=%2250%22 r=%2212%22 fill=%22white%22/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- Ambient background -->
+<div class="bg-grid" aria-hidden="true"></div>
+<div class="bg-glow" aria-hidden="true"></div>
+<div class="bg-noise" aria-hidden="true"></div>
+
+<div class="app" id="app">
+
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-text">LOCK&nbsp;IN</span>
+    </div>
+
+    <div class="phase-indicator" id="phaseIndicator">
+      <span class="phase-dot" id="phaseDot"></span>
+      <span id="phaseLabel">FOCUS</span>
+    </div>
+
+    <div class="topbar-actions">
+      <button class="icon-btn" id="historyBtn" title="Session History" aria-label="Session History">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12a9 9 0 1 0 3-6.7" stroke-linecap="round"/><path d="M3 4v5h5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 7v5l3.5 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="focus-mode-btn" id="focusModeBtn" title="Enter Focus Mode (F)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>FOCUS MODE</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main grid -->
+  <main class="layout" id="layout">
+
+    <!-- LEFT: Current Session -->
+    <aside class="panel session-panel" id="sessionPanel">
+      <h2 class="panel-title">CURRENT SESSION</h2>
+
+      <div class="field-group">
+        <input type="text" id="sessionNameInput" class="session-name-input" placeholder="Name your session..." maxlength="60" spellcheck="false" />
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Focus Mode</label>
+        <div class="mode-select" id="modeSelect">
+          <button class="mode-chip active" data-mode="Deep Work">Deep Work</button>
+          <button class="mode-chip" data-mode="Study">Study</button>
+          <button class="mode-chip" data-mode="Coding">Coding</button>
+          <button class="mode-chip" data-mode="Reading">Reading</button>
+          <button class="mode-chip" data-mode="Custom">Custom</button>
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-block">
+          <div class="stat-value mono" id="statFocused">00:00</div>
+          <div class="stat-label">Focused</div>
+        </div>
+        <div class="stat-block">
+          <div class="stat-value mono" id="statTasksDone">0</div>
+          <div class="stat-label">Tasks Complete</div>
+        </div>
+        <div class="stat-block">
+          <div class="stat-value mono" id="statCompletion">0%</div>
+          <div class="stat-label">Completion</div>
+        </div>
+      </div>
+
+      <div class="progress-viz">
+        <div class="progress-viz-track">
+          <div class="progress-viz-fill" id="sessionProgressFill"></div>
+        </div>
+      </div>
+
+      <div class="collapsible">
+        <button class="collapsible-header" id="notesToggle" aria-expanded="false">
+          <span>SESSION NOTES</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="collapsible-body" id="notesBody">
+          <textarea id="sessionNotes" placeholder="Jot down anything worth remembering about this session…" spellcheck="false"></textarea>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER: Timer -->
+    <section class="timer-stage" id="timerStage">
+
+      <div class="cycle-track" id="cycleTrack">
+        <div class="cycle-step active" data-step="0"><span class="cycle-dot"></span><span class="cycle-label">FOCUS</span></div>
+      </div>
+
+      <div class="timer-core">
+        <div class="lockin-eyebrow">LOCK IN</div>
+
+        <div class="timer-ring-wrap">
+          <svg class="timer-ring" viewBox="0 0 360 360" aria-hidden="true">
+            <circle class="ring-track" cx="180" cy="180" r="164"></circle>
+            <circle class="ring-progress" id="ringProgress" cx="180" cy="180" r="164"></circle>
+          </svg>
+
+          <div class="timer-center">
+            <div class="timer-display mono" id="timerDisplay">25:00</div>
+            <div class="timer-subtext" id="timerSubtext">Deep Work · Session</div>
+          </div>
+
+          <!-- Session complete overlay -->
+          <div class="complete-overlay" id="completeOverlay">
+            <div class="complete-inner">
+              <div class="complete-check">
+                <svg viewBox="0 0 52 52"><circle class="check-circle" cx="26" cy="26" r="24" fill="none"/><path class="check-mark" fill="none" d="M14 27l7 7 17-17"/></svg>
+              </div>
+              <div class="complete-title">SESSION COMPLETE</div>
+              <div class="complete-stats">
+                <div class="complete-stat">
+                  <div class="complete-stat-value mono" id="completeFocused">00:00</div>
+                  <div class="complete-stat-label">Focused</div>
+                </div>
+                <div class="complete-stat">
+                  <div class="complete-stat-value mono" id="completeTasks">0/0</div>
+                  <div class="complete-stat-label">Tasks Completed</div>
+                </div>
+                <div class="complete-stat">
+                  <div class="complete-stat-value mono" id="completePct">0%</div>
+                  <div class="complete-stat-label">Completion</div>
+                </div>
+              </div>
+              <div class="complete-actions">
+                <button class="btn-primary" id="startAnotherBtn">START ANOTHER SESSION</button>
+                <button class="btn-ghost" id="viewSessionBtn">VIEW SESSION</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="timer-controls">
+          <button class="ctrl-btn ctrl-secondary" id="resetBtn" title="Reset (R)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 3-6.7" stroke-linecap="round"/><path d="M3 4v5h5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>RESET</span>
+          </button>
+
+          <button class="ctrl-btn ctrl-primary" id="startPauseBtn" title="Start / Pause (Space)">
+            <svg class="icon-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.14v13.72a1 1 0 0 0 1.5.87l11-6.86a1 1 0 0 0 0-1.72l-11-6.86a1 1 0 0 0-1.5.86z"/></svg>
+            <svg class="icon-pause" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+            <span id="startPauseLabel">START</span>
+          </button>
+
+          <button class="ctrl-btn ctrl-secondary" id="settingsBtn" title="Session Settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>SESSION SETTINGS</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Tasks -->
+    <aside class="panel tasks-panel" id="tasksPanel">
+      <div class="tasks-header">
+        <h2 class="panel-title">TASKS</h2>
+        <span class="tasks-remaining mono" id="tasksRemaining">0 remaining</span>
+      </div>
+
+      <div class="task-input-row">
+        <span class="task-input-icon">+</span>
+        <input type="text" id="taskInput" class="task-input" placeholder="Add a task..." maxlength="140" spellcheck="false" />
+      </div>
+
+      <div class="task-toolbar">
+        <div class="sort-select">
+          <label for="sortSelect" class="sr-only">Sort tasks</label>
+          <select id="sortSelect">
+            <option value="manual">Manual order</option>
+            <option value="priority">Priority</option>
+            <option value="time">Est. time</option>
+          </select>
+        </div>
+      </div>
+
+      <ul class="task-list" id="taskList" aria-label="Task list"></ul>
+
+      <div class="task-empty" id="taskEmpty">
+        <p>No tasks yet.</p>
+        <span>Add one above, or press <kbd>N</kbd></span>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<!-- Session Settings Modal -->
+<div class="modal-backdrop" id="settingsModalBackdrop">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+    <div class="modal-header">
+      <h3 id="settingsModalTitle">SESSION SETTINGS</h3>
+      <button class="modal-close" id="settingsModalClose" aria-label="Close">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="field-group">
+        <label class="field-label">Duration</label>
+        <div class="duration-select" id="durationSelect">
+          <button class="duration-chip" data-mins="25">25 min</button>
+          <button class="duration-chip active" data-mins="50">50 min</button>
+          <button class="duration-chip" data-mins="60">60 min</button>
+          <button class="duration-chip" data-mins="90">90 min</button>
+          <button class="duration-chip" data-mins="custom">Custom</button>
+        </div>
+        <div class="custom-duration-row" id="customDurationRow" style="display:none;">
+          <input type="number" id="customDurationInput" min="1" max="240" value="45" />
+          <span>minutes</span>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Session Structure</label>
+        <div class="structure-select" id="structureSelect">
+          <button class="structure-chip active" data-structure="single">Single Session</button>
+          <button class="structure-chip" data-structure="pomodoro">Pomodoro</button>
+          <button class="structure-chip" data-structure="custom">Custom Cycles</button>
+        </div>
+      </div>
+
+      <div class="field-group" id="pomodoroOptions" style="display:none;">
+        <label class="field-label">Break Length</label>
+        <div class="duration-select" id="breakSelect">
+          <button class="duration-chip" data-mins="5">5 min</button>
+          <button class="duration-chip active" data-mins="10">10 min</button>
+          <button class="duration-chip" data-mins="15">15 min</button>
+          <button class="duration-chip" data-mins="20">20 min</button>
+        </div>
+      </div>
+
+      <div class="field-group" id="customCyclesOptions" style="display:none;">
+        <label class="field-label">Number of Cycles</label>
+        <div class="cycles-stepper">
+          <button id="cyclesMinus">&minus;</button>
+          <span id="cyclesCount" class="mono">3</span>
+          <button id="cyclesPlus">+</button>
+        </div>
+        <div class="cycle-preview mono" id="cyclePreview"></div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-ghost" id="settingsCancelBtn">CANCEL</button>
+      <button class="btn-primary" id="settingsApplyBtn">APPLY</button>
+    </div>
+  </div>
+</div>
+
+<!-- History Panel -->
+<div class="modal-backdrop" id="historyModalBackdrop">
+  <div class="modal history-modal" role="dialog" aria-modal="true" aria-labelledby="historyModalTitle">
+    <div class="modal-header">
+      <h3 id="historyModalTitle">SESSION HISTORY</h3>
+      <button class="modal-close" id="historyModalClose" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="history-group">
+        <div class="history-group-title">TODAY</div>
+        <div class="history-stats-row">
+          <div class="history-stat"><span class="mono" id="todayFocused">0h 0m</span><span>focused</span></div>
+          <div class="history-stat"><span class="mono" id="todaySessions">0</span><span>sessions</span></div>
+          <div class="history-stat"><span class="mono" id="todayTasks">0</span><span>tasks completed</span></div>
+        </div>
+      </div>
+
+      <div class="history-group">
+        <div class="history-group-title">THIS WEEK</div>
+        <div class="history-stats-row">
+          <div class="history-stat"><span class="mono" id="weekFocused">0h 0m</span><span>focused</span></div>
+          <div class="history-stat"><span class="mono" id="weekSessions">0</span><span>sessions</span></div>
+        </div>
+        <div class="week-chart" id="weekChart"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast for keyboard hints etc -->
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
